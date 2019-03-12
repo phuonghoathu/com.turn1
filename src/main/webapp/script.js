@@ -2,7 +2,8 @@
 var data = [];
 
 // Change url api here
-var root = 'http://localhost:8080/com.turn/api';
+//var root = 'http://localhost:8080/com.turn/api';
+var root = 'https://turncomu.herokuapp.com/com.turn/api';
 
 // Create template for each row in table
 function row(data, index) {
