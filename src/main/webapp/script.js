@@ -11,11 +11,11 @@ function row(data, index) {
   $tr.append('<td>' + data.name + '</td>');
   $tr.append('<td>' + data.turn + '</td>');
   $tr.append('<td>' + data.turnAll + '</td>');
-  $tr.append(data.status ? '<td><a href="#" class="js-changeStatus" data-id="' + data.id + '">Inactive</a></td>' : '<td><a href="#" class="js-changeStatus" data-id="' + data.id + '">Active</a></td>');
+  $tr.append(data.status == '0' ? '<td><a href="#" class="js-changeStatus" data-id="' + data.id + '">Inactive</a></td>' : '<td><a href="#" class="js-changeStatus" data-id="' + data.id + '">Active</a></td>');
   $tr.append('<td>' + data.loginTime + '</td>');
   $tr.append('<td><a href="#viewMore" data-id="' + data.id + '" class="btn btn-success js-viewMore">View more</a></td>');
   $tr.append('<td><a href="#addWorkHis" data-id="' + data.id + '" class="btn btn-success js-addWorkHis">Add</a></td>');
-  $tr.append(data.working ? '<td><a href="#" class="js-changeWorking" data-id="' + data.id + '">Working</a></td>' : '<td><a href="#" class="js-changeWorking" data-id="' + data.id + '">Free</a></td>');
+  $tr.append(data.working == '1' ? '<td><a href="#" class="js-changeWorking" data-id="' + data.id + '">Working</a></td>' : '<td><a href="#" class="js-changeWorking" data-id="' + data.id + '">Free</a></td>');
   return $tr;
 }
 
@@ -23,7 +23,7 @@ function row(data, index) {
 function rowWorkHis(data, id) {
   var $tr = $('<tr/>');
   $tr.append('<td>' + data.name + '</td>');
-  $tr.append(data.free === '1' ? '<td>Free</td>' : '<td>Count</td>');
+  $tr.append(data.free == '1' ? '<td>Free</td>' : '<td>Count</td>');
   $tr.append('<td>' + data.money + '</td>');
   $tr.append('<td><a href="#" data-workHisId="' + data.id + '" data-id="' + id + '" class="js-edit">Edit</a> - <a href="#" data-workHisId="' + data.id + '" data-id="' + id + '" class="js-delete">Delete</a></td>');
   return $tr;
@@ -32,7 +32,7 @@ function rowWorkHis(data, id) {
 function filterDataById(id) {
   // Filter by id, so it return array 0 or 1 record
   return data.filter(function (d) {
-    return d.id === id;
+    return d.id == id;
   })[0];
 }
 
@@ -79,18 +79,22 @@ function initPopup() {
   });
 }
 
+function reRenderTable(d) {
+  var $table = $('.js-table');
+  data = d;
+  $table.empty();
+  $.each(d, function (index, value) {
+    $table.append(row(value, index + 1));
+  });
+  if ($table.children().length === 0) {
+    $table.append('<tr><td colspan="9" class="text-center">No data</td></tr>');
+  }
+}
+
 // Call api to fetch data
 function fetchData() {
   $.get(root, function (d) {
-    var $table = $('.js-table');
-    data = d;
-    $table.empty();
-    $.each(d, function (index, value) {
-      $table.append(row(value, index + 1));
-    });
-    if ($table.children().length === 0) {
-      $table.append('<tr><td colspan="9" class="text-center">No data</td></tr>');
-    }
+    reRenderTable(d)
   }).done(function (d) {
     initPopup();
   }).fail(function () {
@@ -102,7 +106,7 @@ function addUser(name) {
   $.get(root + '/addUser/' +
     name
   ).done(function (d) {
-    fetchData();
+    reRenderTable(d);
     $.magnificPopup.instance.close();
   }).fail(function () {
     console.log('Something went wrong when adding new user.');
@@ -116,7 +120,7 @@ function addWork(d) {
     d.money + '/' +
     d.free
   ).done(function (d) {
-    fetchData();
+    reRenderTable(d);
     $.magnificPopup.instance.close();
   }).fail(function () {
     console.log('Something went wrong when adding new work his.');
@@ -131,7 +135,7 @@ function updWork(d) {
     d.money + '/' +
     d.free
   ).done(function (d) {
-    fetchData();
+    reRenderTable(d);
     $.magnificPopup.instance.close();
   }).fail(function () {
     console.log('Something went wrong when updating work his.');
@@ -143,7 +147,7 @@ function delWork(d) {
     d.id + '/' +
     d.workHisId
   ).done(function (d) {
-    fetchData();
+    reRenderTable(d);
     $.magnificPopup.instance.close();
   }).fail(function () {
     console.log('Something went wrong when deleting work his.');
@@ -153,8 +157,8 @@ function delWork(d) {
 function changeStatus(id) {
   $.get(root + '/changeStatus/' +
     id
-  ).done(function () {
-    fetchData();
+  ).done(function (d) {
+    reRenderTable(d);
     $.magnificPopup.instance.close();
   }).fail(function () {
     console.log('Something went wrong when changing status.');
@@ -164,8 +168,8 @@ function changeStatus(id) {
 function changeWorking(id) {
   $.get(root + '/changeWorking/' +
     id
-  ).done(function () {
-    fetchData();
+  ).done(function (d) {
+    reRenderTable(d);
     $.magnificPopup.instance.close();
   }).fail(function () {
     console.log('Something went wrong when changing working.');
@@ -189,13 +193,13 @@ $(document).ready(function () {
     $padd.find('input[name=id]').val(id);
     $padd.find('input[name=workHisId]').val(workHisId);
     var filtered = filterDataById(id);
-    var workHis = filtered.workHis.filter(function (workHis) { return workHis.id === workHisId })[0];
+    var workHis = filtered.workHis.filter(function (workHis) { return workHis.id == workHisId })[0];
     $.each(workHis, function (key, value) {
       if (key === 'name' || key === 'money') {
         $padd.find('input[name=' + key + ']').val(value);
       }
       if (key === 'free') {
-        $padd.find('input[name=' + key + ']').prop('checked', value === '1' ? true : false);
+        $padd.find('input[name=' + key + ']').prop('checked', value == '1' ? true : false);
       }
     });
     $.magnificPopup.open({
@@ -264,7 +268,7 @@ $(document).ready(function () {
   $('.js-user').on('keyup', function () {
     $('.js-addUser').prop('disabled', !$(this).val());
   });
-  
+
   // Collect data and call addUser
   $('.js-addUser').on('click', function () {
     var user = $('.js-user').val();

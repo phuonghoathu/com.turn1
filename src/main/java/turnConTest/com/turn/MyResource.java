@@ -107,6 +107,49 @@ public class MyResource {
 		return buildJson(updatePosition(new ArrayList<Employee>(employee.values())));
 	}
 
+	@GET
+	@Path("/delGroup/{id}/{groupId}")
+	@Produces({ MediaType.APPLICATION_JSON })
+	public String delGroup(@PathParam("id") String id, @PathParam("groupid") String groudid) {
+		Employee employee1 = EmployeeDAO.getEmployee(id);
+		// check null
+		int index = -1;
+		for (int i = 0; i < employee1.getTurnListD().size(); i++) {
+			if (employee1.getTurnListD().get(i).getId().equals(groudid)) {
+				index = i;
+				break;
+			}
+		}
+		WorkHis wk = employee1.getTurnListD().get(index);
+		if (wk.isTurn()) {
+			employee1.setTotalTurn(employee1.getTotalTurn() - wk.getMoney());
+		}
+		employee1.setTotal(employee1.getTotal() - wk.getMoney());
+		employee1.getTurnListD().remove(index);
+		employee = EmployeeDAO.addEmployee(id, employee1);
+		return buildJson(updatePosition(new ArrayList<Employee>(employee.values())));
+	}
+
+	@GET
+	@Path("/changeStatus/{id}")
+	@Produces({ MediaType.APPLICATION_JSON })
+	public String changeStatus(@PathParam("id") String id) {
+		Employee employee1 = EmployeeDAO.getEmployee(id);
+		employee1.setActive(!employee1.isActive());
+		employee = EmployeeDAO.addEmployee(id, employee1);
+		return buildJson(updatePosition(new ArrayList<Employee>(employee.values())));
+	}
+
+	@GET
+	@Path("/changeWorking/{id}")
+	@Produces({ MediaType.APPLICATION_JSON })
+	public String changeWorking(@PathParam("id") String id) {
+		Employee employee1 = EmployeeDAO.getEmployee(id);
+		employee1.setIsWorking(!employee1.isIsWorking());
+		employee = EmployeeDAO.addEmployee(id, employee1);
+		return buildJson(updatePosition(new ArrayList<Employee>(employee.values())));
+	}
+
 	public static ArrayList<ArrayList<Employee>> updatePosition(ArrayList<Employee> employee) {
 // total 10, active 6 , inactive 4
 // Get active, inactive number
@@ -127,7 +170,7 @@ public class MyResource {
 				numberInActive++;
 			}
 		}
-		numberFreeWorker = numberActive - numberBusyWorker;
+		numberFreeWorker = numberActive - numberBusyWorker;// ??????????????
 
 // Process Free Worker 
 		if (numberFreeWorker > 0) {
@@ -200,36 +243,38 @@ public class MyResource {
 
 // Create tmp array of busy worker and sort by total , index position
 // Process Busy worker array
-			if (numberBusyWorker > 0) {
-				ArrayList<Employee> tmpBusyWorker = new ArrayList<>(numberBusyWorker);
-				for (int i = 0; i < employee.size(); i++) {
-					if (employee.get(i).isActive() && employee.get(i).isIsWorking()) {
-						tmpBusyWorker.add(employee.get(i));
-					}
-				}
-				b.bubbleSortTotal(tmpBusyWorker);
-				// set Position
-				for (int i = 0; i < tmpBusyWorker.size(); i++) {
-					tmpBusyWorker.get(i).setPosition(numberActive - numberBusyWorker + i + 1);
-				}
-				arrOfArrEmployee.add(tmpBusyWorker);
-			}
 
 //Create tmp array of inactive and sort inactive & index  position 
 //Process Inactive worker array
-			if (numberInActive > 0) {
-				ArrayList<Employee> tmpInActive = new ArrayList<>(numberInActive);
-				for (int i = 0; i < employee.size(); i++) {
-					if (employee.get(i).isActive() == false) {
-						tmpInActive.add(employee.get(i));
-					}
+
+		}
+		if (numberBusyWorker > 0) {
+			ArrayList<Employee> tmpBusyWorker = new ArrayList<>(numberBusyWorker);
+			for (int i = 0; i < employee.size(); i++) {
+				if (employee.get(i).isActive() && employee.get(i).isIsWorking()) {
+					tmpBusyWorker.add(employee.get(i));
 				}
-				b.bubbleSortTime(tmpInActive);
-				for (int i = 0; i < tmpInActive.size(); i++) {
-					tmpInActive.get(i).setPosition(i + 1 + numberActive);
-				}
-				arrOfArrEmployee.add(tmpInActive);
 			}
+			b.bubbleSortTotal(tmpBusyWorker);
+			// set Position
+			for (int i = 0; i < tmpBusyWorker.size(); i++) {
+				tmpBusyWorker.get(i).setPosition(numberActive - numberBusyWorker + i + 1);
+			}
+			arrOfArrEmployee.add(tmpBusyWorker);
+		}
+
+		if (numberInActive > 0) {
+			ArrayList<Employee> tmpInActive = new ArrayList<>(numberInActive);
+			for (int i = 0; i < employee.size(); i++) {
+				if (employee.get(i).isActive() == false) {
+					tmpInActive.add(employee.get(i));
+				}
+			}
+			b.bubbleSortTime(tmpInActive);
+			for (int i = 0; i < tmpInActive.size(); i++) {
+				tmpInActive.get(i).setPosition(i + 1 + numberActive);
+			}
+			arrOfArrEmployee.add(tmpInActive);
 		}
 		return arrOfArrEmployee;
 		// print(arrOfArrEmployee);
